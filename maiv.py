@@ -1,7 +1,7 @@
 import asyncio
 import time
 from pygame import mixer
-import pyttsx3
+from gtts import gTTS
 import os
 import re
 import random
@@ -42,10 +42,8 @@ async def connect():
     return await RobotClient.at_address(viam_address, opts)
 
 async def say(text):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 140)
-    engine.save_to_file(text, "test.mp3")
-    engine.runAndWait()
+    myobj = gTTS(text=text, lang='en', slow=False)
+    myobj.save("test.mp3")
 
     time.sleep(1)
 
@@ -80,8 +78,10 @@ async def make_something_up(seen):
 async def ai_command(command):
     try:
         completion = openai.Completion.create(engine="text-davinci-003", max_tokens=1024, prompt=command)
+        completion = completion.choices[0].text
+        completion = re.sub('[^0-9a-zA-Z.!? ]+', '', completion)
         print(completion)
-        return completion.choices[0].text
+        return completion
     except openai.error.ServiceUnavailableError:
         errors = ["Sorry, I am feeling tired", "Sorry, I had a brain fart", "Never mind, I don't know"]
         return random.choice(errors)
@@ -169,37 +169,13 @@ async def main():
                         global current_char
                         current_char = re.sub(char_command, "", command)
                         await say("OK, I am " + current_char)
+                    else:
+                        await say(await ai_command(command))
 
         except sr.UnknownValueError:
             print("Speech recognition could not understand audio")
         except Exception as e:
             print(e)
-
-        
-    #service = VisionServiceClient.from_robot(robot, 'vision')
-   
-    #seen = {}
-    #target_seen = random.randint(1, 3)
-    #while True:
-        #detections = await service.get_detections_from_camera(camera_name='cam', detector_name='stuff_detector')
-    #    detections = await service.get_classifications_from_camera(camera_name='cam', classifier_name='stuff_detector', count=1)
-
-     #   for d in detections:
-     #       if d.confidence > vision_confidence:
-     #           print(detections)
-     #           if d.class_name != '???':
-     #               if seen.get(d.class_name) == None:
-     #                   seen[d.class_name] = True
-     #                   seen_count = len(seen)
-     #                   await move_servo(seen_count)
-     #                   print(d.class_name)
-     #                   prefix = ['I see a', 'Oh, there is a', 'Look, a', 'Oh snap, a', 'I spy a']
-     #                   await say(random.choice(prefix) + " " + d.class_name)
-     #                   if seen_count == target_seen:
-     #                       await make_something_up(seen)
-     #                       seen = {}
-     #                       target_seen = random.randint(1, 3)
-     #   time.sleep(.05)
 
 if __name__ == '__main__':
     try:
