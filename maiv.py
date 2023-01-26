@@ -5,6 +5,7 @@ import pyttsx3
 import os
 import re
 import random
+import signal
 import openai
 
 from viam.components.servo import Servo
@@ -16,6 +17,7 @@ viam_secret = os.getenv('VIAM_SECRET')
 viam_address = os.getenv('VIAM_ADDRESS')
 openai.organization = os.getenv('OPENAPI_ORG')
 openai.api_key = os.getenv('OPENAPI_KEY')
+vision_confidence = .4
 
 mixer.init(devicename = 'Built-in Audio Analog Stereo (2)')
 robot = ''
@@ -65,9 +67,13 @@ async def make_something_up(seen):
     await say(resp)
 
 async def ai_command(command):
-    completion = openai.Completion.create(engine="text-davinci-003", max_tokens=1024, prompt=command)
-    print(completion)
-    return completion.choices[0].text
+    try:
+        completion = openai.Completion.create(engine="text-davinci-003", max_tokens=1024, prompt=command)
+        print(completion)
+        return completion.choices[0].text
+    except openai.error.ServiceUnavailableError:
+        errors = ["Sorry, I am feeling tired", "Sorry, I had a brain fart", "Never mind, I don't know"]
+        return random.choice(errors)
 
 async def move_servo(pos):
     pos_angle = {
@@ -81,9 +87,19 @@ async def move_servo(pos):
     service = Servo.from_robot(robot, 'servo1')
     await service.move(angle=pos_angle[pos])
 
+async def sig_handler():
+    print("exiting...")
+    try:
+        await robot.close()
+    except:
+        exit
+
 async def main():
     global robot
     robot = await connect()
+    loop = asyncio.get_event_loop()
+    for signame in ('SIGINT', 'SIGTERM'):
+        loop.add_signal_handler(getattr(signal, signame),lambda: asyncio.create_task(sig_handler()))
 
     service = VisionServiceClient.from_robot(robot, 'vision')
    
@@ -94,7 +110,7 @@ async def main():
         detections = await service.get_classifications_from_camera(camera_name='cam', classifier_name='stuff_detector', count=1)
 
         for d in detections:
-            if d.confidence > .6:
+            if d.confidence > vision_confidence:
                 print(detections)
                 if d.class_name != '???':
                     if seen.get(d.class_name) == None:
@@ -110,7 +126,8 @@ async def main():
                             target_seen = random.randint(1, 3)
         time.sleep(.05)
 
-    await robot.close()
-
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except:
+        exit
