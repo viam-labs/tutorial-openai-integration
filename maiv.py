@@ -20,7 +20,7 @@ viam_address = os.getenv('VIAM_ADDRESS')
 openai.organization = os.getenv('OPENAPI_ORG')
 openai.api_key = os.getenv('OPENAPI_KEY')
 
-vision_confidence = .4
+vision_confidence = .3
 completion_types = ['expression', 'question', 'something']
 robot_command_prefix = "hey robot"
 char_command = "act like"
@@ -113,7 +113,7 @@ async def see_something():
                     found = True
                     await make_something_up([d.class_name])
             count = count + 1
-            if count > 50:
+            if count > 20:
                 found = True
                 await say("nothing")
 
