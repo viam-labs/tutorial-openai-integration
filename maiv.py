@@ -10,6 +10,7 @@ import openai
 import speech_recognition as sr
 
 from viam.components.servo import Servo
+from viam.components.base import Base
 from viam.robot.client import RobotClient
 from viam.services.vision import VisionServiceClient
 from viam.rpc.dial import Credentials, DialOptions
@@ -100,6 +101,7 @@ async def move_servo(pos):
 async def see_something():
     service = VisionServiceClient.from_robot(robot, 'vision')
     found = False
+    count = 0
     while not found:
         # if you are using a detection model instead of classifier...
         #detections = await service.get_detections_from_camera(camera_name='cam', detector_name='stuff_detector')
@@ -110,6 +112,10 @@ async def see_something():
                 if d.class_name != '???':
                     found = True
                     await make_something_up([d.class_name])
+            count = count + 1
+            if count > 50:
+                found = True
+                await say("nothing")
 
 
 async def sig_handler():
@@ -122,6 +128,7 @@ async def sig_handler():
 async def main():
     global robot
     robot = await connect()
+    base = Base.from_robot(robot, 'viam_base')
     loop = asyncio.get_event_loop()
     for signame in ('SIGINT', 'SIGTERM'):
         loop.add_signal_handler(getattr(signal, signame),lambda: asyncio.create_task(sig_handler()))
@@ -140,7 +147,23 @@ async def main():
                 if re.search("^" + robot_command_prefix, text):
                     command = re.sub(robot_command_prefix + "\s+",  '', text)
                     print(command)
-                    if re.search("^" + '|'.join(observe_list), command):
+                    if command == "spin":
+                        await base.spin(angle=720, velocity=500)
+                    elif command == "turn a little right":
+                        await base.spin(angle=-45, velocity=500)
+                    elif command == "turn right":
+                        await base.spin(angle=-90, velocity=500)
+                    elif command == "turn a little left":
+                        await base.spin(angle=90, velocity=500)
+                    elif command == "turn left":
+                        await base.spin(angle=90, velocity=500)
+                    elif command == "turn around":
+                        await base.spin(angle=180, velocity=500)
+                    elif command == "move forward":
+                        await base.move_straight(distance=1000, velocity=500)
+                    elif command == "move backwards":
+                        await base.move_straight(distance=-1000, velocity=500)
+                    elif re.search("^" + '|'.join(observe_list), command):
                         await see_something()
                     elif re.search("^" + char_command +" (" + '|'.join(char_list) + ")", command):
                         global current_char
