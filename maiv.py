@@ -65,11 +65,14 @@ async def make_something_up(seen):
     
     chosen_tone = random.choice(tones)
     command = "say a short " + chosen_tone + " " + random.choice(completion_types) + " about a " + ' and a '.join(seen)
+    seen_sentence = "can you say '" + random.choice(prefix[chosen_tone]) + " " + ' and a '.join(seen) + "'"
     if (current_char != ""):
         command = command + " in the style of " + current_char
+        seen_sentence = seen_sentence + " in the style of " + current_char
+    print(seen_sentence)
     print(command)
-    await move_servo(chosen_tone)
-    await say(random.choice(prefix[chosen_tone]) + " " + ' and a '.join(seen))
+    await move_servo(chosen_tone)    
+    await say(await ai_command(seen_sentence))
     resp = await ai_command(command)
     resp = re.sub('Q:',  'Question: ', resp)
     resp = re.sub('A:',  'Answer: ', resp)
@@ -168,7 +171,7 @@ async def main():
                     elif re.search("^" + char_command +" (" + '|'.join(char_list) + ")", command):
                         global current_char
                         current_char = re.sub(char_command, "", command)
-                        await say("OK, I am " + current_char)
+                        await say(await ai_command("Say hi in the style of " + current_char))
                     else:
                         await say(await ai_command(command))
 
