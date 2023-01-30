@@ -168,6 +168,11 @@ async def main():
                         await base.move_straight(distance=1000, velocity=500)
                     elif command == "move backwards":
                         await base.move_straight(distance=-1000, velocity=500)
+                    elif command == "reset":
+                        global current_char
+                        global current_mood
+                        current_char = ""
+                        current_mood = ""
                     elif re.search("^" + '|'.join(observe_list), command):
                         await see_something()
                     elif re.search("^" + char_command +" (" + '|'.join(char_list) + ")", command):
