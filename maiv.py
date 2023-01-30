@@ -9,7 +9,7 @@ import signal
 import openai
 import speech_recognition as sr
 
-from viam.components.servo import Servo
+from viam.components.servo import ServoClient
 from viam.components.base import Base
 from viam.robot.client import RobotClient
 from viam.services.vision import VisionServiceClient
@@ -71,9 +71,6 @@ async def make_something_up(seen):
 
     command = "say a short " + chosen_tone + " " + random.choice(completion_types) + " about a " + ' and a '.join(seen)
     seen_sentence = "can you say '" + random.choice(prefix[chosen_tone]) + " " + ' and a '.join(seen) + "'"
-    if (current_char != ""):
-        command = command + " in the style of " + current_char
-        seen_sentence = seen_sentence + " in the style of " + current_char
     print(seen_sentence)
     print(command)
     await move_servo(chosen_tone)    
@@ -85,6 +82,8 @@ async def make_something_up(seen):
 
 async def ai_command(command):
     try:
+        if (current_char != ""):
+            command = command + " in the style of " + current_char
         completion = openai.Completion.create(engine="text-davinci-003", max_tokens=1024, prompt=command)
         completion = completion.choices[0].text
         completion = re.sub('[^0-9a-zA-Z.!? ]+', '', completion)
@@ -100,7 +99,7 @@ async def move_servo(pos):
                 "angry": 75,
                 "sad": 157
             }
-    service = Servo.from_robot(robot, 'servo1')
+    service = ServoClient.from_robot(robot, 'servo1')
     await service.move(angle=pos_angle[pos])
 
 async def see_something():
@@ -177,7 +176,7 @@ async def main():
                         await see_something()
                     elif re.search("^" + char_command +" (" + '|'.join(char_list) + ")", command):
                         current_char = re.sub(char_command, "", command)
-                        await say(await ai_command("Say hi in the style of " + current_char))
+                        await say(await ai_command("Say hi"))
                     elif re.search("^you seem", command):
                         current_mood = re.sub("you seem ", "", command)
                         await move_servo(current_mood)
