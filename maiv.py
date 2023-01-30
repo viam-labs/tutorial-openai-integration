@@ -30,6 +30,7 @@ char_list = ["yoda", 'c-3po', "c3po", "darth vader", "homer simpson", "tony sopr
 mixer.init(devicename = 'Built-in Audio Analog Stereo (2)')
 robot = ''
 current_char = ""
+current_mood = ""
 
 async def connect():
     creds = Credentials(
@@ -63,7 +64,11 @@ async def make_something_up(seen):
     prefix = {'angry': ['Damn, is that a', 'Damn, I see a', 'Shoot, its a'], 
         'happy': ['Well look, its a', "Yes! I see a", "Yay, its a"], 'sad': ['Oh no, its a', 'I fear I see a', 'Sadly, I think thats a']}
     
-    chosen_tone = random.choice(tones)
+    if current_mood == "":
+        chosen_tone = random.choice(tones)
+    else:
+        chosen_tone = current_mood
+
     command = "say a short " + chosen_tone + " " + random.choice(completion_types) + " about a " + ' and a '.join(seen)
     seen_sentence = "can you say '" + random.choice(prefix[chosen_tone]) + " " + ' and a '.join(seen) + "'"
     if (current_char != ""):
@@ -91,12 +96,9 @@ async def ai_command(command):
 
 async def move_servo(pos):
     pos_angle = {
-                1: 4,
-                2: 37,
-                3: 71,
-                "angry": 106,
-                "happy": 173,
-                "sad": 138
+                "happy": 0,
+                "angry": 80,
+                "sad": 160
             }
     service = Servo.from_robot(robot, 'servo1')
     await service.move(angle=pos_angle[pos])
@@ -172,6 +174,10 @@ async def main():
                         global current_char
                         current_char = re.sub(char_command, "", command)
                         await say(await ai_command("Say hi in the style of " + current_char))
+                    elif re.search("^you seem", command):
+                        global current_mood
+                        current_mood = re.sub("you seem ", "", command)
+                        await say(await ai_command("Say yeah, I'm " + current_mood))
                     else:
                         await say(await ai_command(command))
 
