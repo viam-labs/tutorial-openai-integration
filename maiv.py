@@ -97,8 +97,8 @@ async def ai_command(command):
 async def move_servo(pos):
     pos_angle = {
                 "happy": 0,
-                "angry": 80,
-                "sad": 160
+                "angry": 75,
+                "sad": 157
             }
     service = Servo.from_robot(robot, 'servo1')
     await service.move(angle=pos_angle[pos])
@@ -145,6 +145,8 @@ async def main():
             r.adjust_for_ambient_noise(source) 
             audio = r.listen(source)
         try:
+            global current_char
+            global current_mood
             transcript = r.recognize_google(audio_data=audio, show_all=True)
             if type(transcript) is dict and transcript.get("alternative"):
                 text = transcript["alternative"][0]["transcript"].lower()
@@ -169,19 +171,16 @@ async def main():
                     elif command == "move backwards":
                         await base.move_straight(distance=-1000, velocity=500)
                     elif command == "reset":
-                        global current_char
-                        global current_mood
                         current_char = ""
                         current_mood = ""
                     elif re.search("^" + '|'.join(observe_list), command):
                         await see_something()
                     elif re.search("^" + char_command +" (" + '|'.join(char_list) + ")", command):
-                        global current_char
                         current_char = re.sub(char_command, "", command)
                         await say(await ai_command("Say hi in the style of " + current_char))
                     elif re.search("^you seem", command):
-                        global current_mood
                         current_mood = re.sub("you seem ", "", command)
+                        await move_servo(current_mood)
                         await say(await ai_command("Say yeah, I'm " + current_mood))
                     else:
                         await say(await ai_command(command))
