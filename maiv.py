@@ -24,7 +24,7 @@ vision_confidence = .3
 completion_types = ['expression', 'question', 'something']
 robot_command_prefix = "hey robot"
 char_command = "act like"
-observe_list = ["what are you thinking", "what do you think", "what do you see", "whats thats"]
+observe_list = ["what do you see"]
 char_list = ["yoda", 'c-3po', "c3po", "darth vader", "homer simpson", "tony soprano"]
 
 mixer.init(devicename = 'Built-in Audio Analog Stereo (2)')
