@@ -9,7 +9,7 @@ import signal
 import openai
 import speech_recognition as sr
 
-from viam.components.servo import ServoClient
+from viam.components.servo import Servo
 from viam.components.base import Base
 from viam.robot.client import RobotClient
 from viam.services.vision import VisionServiceClient
@@ -99,7 +99,7 @@ async def move_servo(pos):
                 "angry": 75,
                 "sad": 157
             }
-    service = ServoClient.from_robot(robot, 'servo1')
+    service = Servo.from_robot(robot, 'servo1')
     await service.move(angle=pos_angle[pos])
 
 async def see_something():
