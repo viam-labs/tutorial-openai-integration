@@ -22,15 +22,18 @@ openai.api_key = os.getenv('OPENAPI_KEY')
 
 vision_confidence = .3
 completion_types = ['expression', 'question', 'something']
-robot_command_prefix = "hey robot"
+robot_command_prefix = "rosie"
 char_command = "act like"
-observe_list = ["what do you see"]
-char_list = ["yoda", 'c-3po', "c3po", "darth vader", "homer simpson", "tony soprano"]
+char_guess_command = "i think you are"
+intro_command = "my name is"
+observe_list = ["what do you see", "whats that"]
+char_list = ["eric cartman", "yoda", "scooby doo", "cheech and chong", "fred from flinstones", 'c-3po', "c3po", "darth vader", "homer simpson", "tony soprano", "spongebob", "bender rodriguez", "micheal scott", "harley quinn", "paris hilton", "doctor evil", "linda belcher", "donkey from shrek", "Daenerys Targaryen", "eeyore"]
 
 mixer.init(devicename = 'Built-in Audio Analog Stereo (2)')
 robot = ''
 current_char = ""
 current_mood = ""
+current_person_name = ""
 
 async def connect():
     creds = Credentials(
@@ -70,7 +73,7 @@ async def make_something_up(seen):
         chosen_tone = current_mood
 
     command = "say a short " + chosen_tone + " " + random.choice(completion_types) + " about a " + ' and a '.join(seen)
-    seen_sentence = "can you say '" + random.choice(prefix[chosen_tone]) + " " + ' and a '.join(seen) + "'"
+    seen_sentence = "say '" + current_person_name + "," + random.choice(prefix[chosen_tone]) + " " + ' and a '.join(seen) + "'"
     print(seen_sentence)
     print(command)
     await move_servo(chosen_tone)    
@@ -146,12 +149,13 @@ async def main():
         try:
             global current_char
             global current_mood
+            global current_person_name
             transcript = r.recognize_google(audio_data=audio, show_all=True)
             if type(transcript) is dict and transcript.get("alternative"):
                 text = transcript["alternative"][0]["transcript"].lower()
                 print(text)
-                if re.search("^" + robot_command_prefix, text):
-                    command = re.sub(robot_command_prefix + "\s+",  '', text)
+                if re.search(".*" + robot_command_prefix, text):
+                    command = re.sub(".*" +robot_command_prefix + "\s+",  '', text)
                     print(command)
                     if command == "spin":
                         await base.spin(angle=720, velocity=500)
@@ -172,15 +176,30 @@ async def main():
                     elif command == "reset":
                         current_char = ""
                         current_mood = ""
+                        current_person_name = ""
                     elif re.search("^" + '|'.join(observe_list), command):
                         await see_something()
+                    elif command == "act random":
+                        current_char = random.choice(char_list)
+                        await say(await ai_command("Say hi " + current_person_name))
+                    elif re.search("^" + intro_command, command):
+                        current_person_name = re.sub(intro_command, "", command)
+                        await say(await ai_command("Say hi " + current_person_name))
                     elif re.search("^" + char_command +" (" + '|'.join(char_list) + ")", command):
                         current_char = re.sub(char_command, "", command)
                         await say(await ai_command("Say hi"))
+                    elif re.search("^" + char_guess_command +" (" + '|'.join(char_list) + ")", command):
+                        if current_char != "":
+                            char_guess = re.sub(char_guess_command, "", command)
+                            print("guess: |" + char_guess + "|actual: |" + current_char)
+                            if char_guess == current_char:
+                                await say(await ai_command("say 'You are correct'"))
+                            else:
+                                await say(await ai_command("say 'You are wrong, try again'"))
                     elif re.search("^you seem", command):
                         current_mood = re.sub("you seem ", "", command)
                         await move_servo(current_mood)
-                        await say(await ai_command("Say yeah, I'm " + current_mood))
+                        await say(await ai_command("Say 'yeah, I am " + current_mood +  "'"))
                     else:
                         await say(await ai_command(command))
 
