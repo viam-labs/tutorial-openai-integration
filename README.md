@@ -1,1 +1,1 @@
-# tutorial-chatgpt-integration
+# tutorial-openai-integration
