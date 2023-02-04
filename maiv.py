@@ -21,13 +21,16 @@ openai.organization = os.getenv('OPENAPI_ORG')
 openai.api_key = os.getenv('OPENAPI_KEY')
 
 vision_confidence = .3
+enable_emotion_wheel = True
 completion_types = ['expression', 'question', 'something']
 robot_command_prefix = "rosie"
 char_command = "act like"
 char_guess_command = "i think you are"
 intro_command = "my name is"
 observe_list = ["what do you see", "whats that"]
-char_list = ["eric cartman", "yoda", "scooby doo", "cheech and chong", "fred from flinstones", 'c-3po', "c3po", "darth vader", "homer simpson", "tony soprano", "spongebob", "bender rodriguez", "micheal scott", "harley quinn", "paris hilton", "doctor evil", "linda belcher", "donkey from shrek", "Daenerys Targaryen", "eeyore"]
+char_list = ["yoda", "scooby doo", "cheech and chong", "fred from flinstones", "eric cartman",
+    "c-3po", "c3po", "darth vader", "homer simpson", "tony soprano", "spongebob", "bender rodriguez", 
+    "micheal scott", "harley quinn", "paris hilton", "doctor evil", "linda belcher", "donkey from shrek", "daenerys targaryen", "eeyore"]
 
 mixer.init(devicename = 'Built-in Audio Analog Stereo (2)')
 robot = ''
@@ -97,13 +100,14 @@ async def ai_command(command):
         return random.choice(errors)
 
 async def move_servo(pos):
-    pos_angle = {
-                "happy": 0,
-                "angry": 75,
-                "sad": 157
-            }
-    service = Servo.from_robot(robot, 'servo1')
-    await service.move(angle=pos_angle[pos])
+    if enable_emotion_wheel == True:
+        pos_angle = {
+                    "happy": 0,
+                    "angry": 75,
+                    "sad": 157
+                }
+        service = Servo.from_robot(robot, 'servo1')
+        await service.move(angle=pos_angle[pos])
 
 async def see_something():
     service = VisionServiceClient.from_robot(robot, 'vision')
@@ -141,7 +145,9 @@ async def main():
         loop.add_signal_handler(getattr(signal, signame),lambda: asyncio.create_task(sig_handler()))
 
     r = sr.Recognizer()
-    m = sr.Microphone()
+    r.energy_threshold = 1568 
+    r.dynamic_energy_threshold = True
+    m = sr.Microphone(sample_rate=44100)
     while True:
         with m as source:
             r.adjust_for_ambient_noise(source) 
