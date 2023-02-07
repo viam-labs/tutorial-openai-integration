@@ -116,7 +116,7 @@ async def see_something():
     while not found:
         # if you are using a detection model instead of classifier...
         #detections = await service.get_detections_from_camera(camera_name='cam', detector_name='stuff_detector')
-        detections = await service.get_classifications_from_camera(camera_name='cam', classifier_name='stuff_detector', count=1)
+        detections = await service.get_classifications_from_camera(camera_name='cam', classifier_name='stuff_classifier', count=1)
         for d in detections:
             if d.confidence > vision_confidence:
                 print(detections)
