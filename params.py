@@ -5,7 +5,7 @@ viam_address = os.getenv('VIAM_ADDRESS')
 openai_organization = os.getenv('OPENAPI_ORG')
 openai_api_key = os.getenv('OPENAPI_KEY')
 
-mixer_device = 'bcm2835 Headphones, bcm2835 Headphones'
+mixer_device = 'Built-in Audio Analog Stereo'
 
 vision_confidence = .3
 enable_emotion_wheel = True

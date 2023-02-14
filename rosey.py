@@ -1,6 +1,7 @@
 import asyncio
 import time
 from pygame import mixer
+import pygame._sdl2 as sdl2
 from gtts import gTTS
 import os
 import re
@@ -9,7 +10,6 @@ import signal
 import openai
 import speech_recognition as sr
 import params
-import pygame._sdl2 as sdl2
 
 from viam.components.servo import Servo
 from viam.components.base import Base
@@ -19,10 +19,6 @@ from viam.rpc.dial import Credentials, DialOptions
 
 openai.organization = params.openai_organization
 openai.api_key = params.openai_api_key
-
-char_guess_command = "i think you are"
-intro_command = "my name is"
-observe_list = ["what do you see", "whats that"]
 
 mixer.init(devicename = params.mixer_device)
 robot = ''
@@ -118,32 +114,17 @@ async def see_something():
             count = count + 1
             if count > 20:
                 found = True
+                # nothing significant seen, so stop trying
                 await say("nothing")
-
-
-async def sig_handler():
-    print("exiting...")
-    try:
-        await robot.close()
-    except:
-        exit
 
 async def main():
     global robot
     robot = await connect()
     base = Base.from_robot(robot, 'viam_base')
-    loop = asyncio.get_event_loop()
-    for signame in ('SIGINT', 'SIGTERM'):
-        loop.add_signal_handler(getattr(signal, signame),lambda: asyncio.create_task(sig_handler()))
-
-    for index, name in enumerate(sr.Microphone.list_microphone_names()):
-        print("Microphone with name \"{1}\" found for `Microphone(device_index={0})`".format(index, name))
-
     r = sr.Recognizer()
     r.energy_threshold = 1568 
     r.dynamic_energy_threshold = True
-    m = sr.Microphone(device_index=0, sample_rate=44100)
-    print ("mic")
+    m = sr.Microphone(sample_rate=44100)
 
     while True:
         with m as source:
@@ -180,20 +161,20 @@ async def main():
                         current_char = ""
                         current_mood = ""
                         current_person_name = ""
-                    elif re.search("^" + '|'.join(observe_list), command):
+                    elif re.search("^" + '|'.join(params.observe_list), command):
                         await see_something()
                     elif command == "act random":
                         current_char = random.choice(params.char_list)
                         await say(await ai_command("Say hi " + current_person_name))
-                    elif re.search("^" + intro_command, command):
-                        current_person_name = re.sub(intro_command, "", command)
+                    elif re.search("^" + params.intro_command, command):
+                        current_person_name = re.sub(params.intro_command, "", command)
                         await say(await ai_command("Say hi " + current_person_name))
                     elif re.search("^" + params.char_command +" (" + '|'.join(params.char_list) + ")", command):
                         current_char = re.sub(params.char_command, "", command)
                         await say(await ai_command("Say hi"))
-                    elif re.search("^" + char_guess_command +" (" + '|'.join(params.char_list) + ")", command):
+                    elif re.search("^" + params.char_guess_command +" (" + '|'.join(params.char_list) + ")", command):
                         if current_char != "":
-                            char_guess = re.sub(char_guess_command, "", command)
+                            char_guess = re.sub(params.char_guess_command, "", command)
                             print("guess: |" + char_guess + "|actual: |" + current_char)
                             if char_guess == current_char:
                                 await say(await ai_command("say 'You are correct'"))
