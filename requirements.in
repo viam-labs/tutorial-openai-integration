@@ -1,0 +1,7 @@
+google-cloud-speech
+gtts==2.3.1
+openai==0.26.5
+pyaudio
+pygame==2.1.2
+SpeechRecognition==3.9.0
+viam-sdk
