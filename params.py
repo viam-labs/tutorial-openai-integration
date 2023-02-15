@@ -15,6 +15,6 @@ char_command = "act like"
 char_guess_command = "i think you are"
 intro_command = "my name is"
 observe_list = ["what do you see", "whats that"]
-char_list = ["yoda", "scooby doo", "cheech and chong", "fred from flinstones", "eric cartman",
+char_list = ["yoda", "scooby doo", "cheech and chong", "fred from flintstones", "eric cartman",
     "c-3po", "c3po", "darth vader", "homer simpson", "tony soprano", "spongebob", "bender rodriguez", 
     "michael scott", "harley quinn", "paris hilton", "doctor evil", "linda belcher", "donkey from shrek", "daenerys targaryen", "eeyore"]
