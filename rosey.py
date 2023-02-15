@@ -175,7 +175,7 @@ async def main():
                     elif re.search("^" + params.char_guess_command +" (" + '|'.join(params.char_list) + ")", command):
                         if current_char != "":
                             char_guess = re.sub(params.char_guess_command, "", command)
-                            print("guess: |" + char_guess + "|actual: |" + current_char)
+                            print("guess: |" + char_guess + "|actual: |" + current_char + "|")
                             if char_guess == current_char:
                                 await say(await ai_command("say 'You are correct'"))
                             else:
