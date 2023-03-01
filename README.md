@@ -1,5 +1,6 @@
 # tutorial-openai-integration
 
+A demo of integrating OpenAI's ChatGPT with robotics. 
 This tutorial expects that you'll be running [viam-server](https://docs.viam.com/) on Raspberry Pi.
 
 ## Prerequisites
