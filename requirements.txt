@@ -35,7 +35,7 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-openai==0.26.5
+openai==0.27.0
     # via -r requirements.in
 pyaudio
 pygame==2.1.2

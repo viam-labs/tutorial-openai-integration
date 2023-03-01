@@ -78,8 +78,8 @@ async def ai_command(command):
     try:
         if (current_char != ""):
             command = command + " in the style of " + current_char
-        completion = openai.Completion.create(engine="text-davinci-003", max_tokens=1024, prompt=command)
-        completion = completion.choices[0].text
+        completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", max_tokens=1024, messages=[{"role": "user", "content": command}])
+        completion = completion.choices[0].message.content
         completion = re.sub('[^0-9a-zA-Z.!? ]+', '', completion)
         print(completion)
         return completion
