@@ -20,7 +20,9 @@ from viam.rpc.dial import Credentials, DialOptions
 openai.organization = params.openai_organization
 openai.api_key = params.openai_api_key
 
-mixer.init(devicename = params.mixer_device)
+# if you want to specify a specific device, you can pass devicename = params.mixer_device
+# see https://pypi.org/project/SpeechRecognition/ for troubleshooting tips
+mixer.init()
 robot = ''
 current_char = ""
 current_mood = ""
@@ -55,7 +57,7 @@ async def say(text):
 
 async def make_something_up(seen):
     tones = ['angry', 'happy', 'sad']
-    prefix = {'angry': ['Damn, is that a', 'Damn, I see a', 'Shoot, its a'], 
+    prefix = {'angry': ['Really? Is that a', 'No! I see a', 'Shoot, its a'], 
         'happy': ['Well look, its a', "Yes! I see a", "Yay, its a"], 'sad': ['Oh no, its a', 'I fear I see a', 'Sadly, I think thats a']}
     
     if current_mood == "":
@@ -124,7 +126,7 @@ async def main():
     r = sr.Recognizer()
     r.energy_threshold = 1568 
     r.dynamic_energy_threshold = True
-    m = sr.Microphone(sample_rate=44100)
+    m = sr.Microphone()
 
     while True:
         with m as source:
