@@ -1,6 +1,9 @@
 import asyncio
 import time
+import sqlite3
+import hashlib
 from pygame import mixer
+from elevenlabs import ElevenLabs
 import pygame._sdl2 as sdl2
 from gtts import gTTS
 import os
@@ -17,8 +20,17 @@ from viam.robot.client import RobotClient
 from viam.services.vision import VisionServiceClient
 from viam.rpc.dial import Credentials, DialOptions
 
+# set up db cache
+con = sqlite3.connect("cache/rosey_cache.db")
+cur = con.cursor()
+res = cur.execute("SELECT name FROM sqlite_master WHERE name='responses'")
+if res.fetchone() is None:
+    cur.execute("CREATE TABLE responses(prompt, char, mood, response)")
+
 openai.organization = params.openai_organization
 openai.api_key = params.openai_api_key
+if (params.elevenlabs_key):
+    eleven = ElevenLabs(params.elevenlabs_key)
 
 # if you want to specify a specific device, you can pass devicename = params.mixer_device
 # see https://pypi.org/project/SpeechRecognition/ for troubleshooting tips
@@ -39,21 +51,29 @@ async def connect():
     return await RobotClient.at_address(params.viam_address, opts)
 
 async def say(text):
-    myobj = gTTS(text=text, lang='en', slow=False)
-    myobj.save("test.mp3")
-
-    time.sleep(1)
-
+    file = 'cache/' + current_char + hashlib.md5(text.encode()).hexdigest() 
     try:
-        mixer.music.load("test.mp3") 
+        if (re.match("^As an AI language model", text) or not os.path.isfile(file + ".mp3")):
+            if (params.elevenlabs_key and ((current_char and "voice" in params.char_list[current_char.lstrip()]) or (params.elevenlabs_default_voice != ""))):
+                if (current_char and "voice" in params.char_list[current_char.lstrip()]):
+                    print(params.char_list[current_char.lstrip()])
+                    voice = eleven.voices[params.char_list[current_char.lstrip()]["voice"]]
+                else:
+                    voice = eleven.voices[params.elevenlabs_default_voice]
+                audio = voice.generate(text)
+                time.sleep(1)
+                audio.save(file)
+                time.sleep(1)
+            else:
+                myobj = gTTS(text=text, lang='en', slow=False)
+                myobj.save(file + ".mp3")
+        mixer.music.load(file + ".mp3") 
         mixer.music.play() # Play it
 
         while mixer.music.get_busy():  # wait for music to finish playing
             time.sleep(1)
     except RuntimeError:
         await say("nevermind")
-
-    os.remove("test.mp3")
 
 async def make_something_up(seen):
     tones = ['angry', 'happy', 'sad']
@@ -77,16 +97,32 @@ async def make_something_up(seen):
     await say(resp)
 
 async def ai_command(command):
+    # get cached response if it exists
+    res = cur.execute("SELECT response FROM responses WHERE prompt=? and char=? and mood=?", (command, current_char, current_mood))
+    response = res.fetchone()
+    if(response):
+        return response[0]
     try:
         if (current_char != ""):
-            command = command + " in the style of " + current_char
-        completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", max_tokens=1024, messages=[{"role": "user", "content": command}])
+            style = current_char
+        else:
+            # default to "a companion" to avoid "As an AI language model..."
+            style = "a companion"
+        
+        command_update = "give me a quote that a " + current_mood + " " + style + " might say in response to " + command
+        print(command_update)
+        completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", max_tokens=1024, messages=[{"role": "user", "content": command_update}])
         completion = completion.choices[0].message.content
+        print(completion)
         completion = re.sub('[^0-9a-zA-Z.!? ]+', '', completion)
         print(completion)
+        if(not re.match("^As an AI language model", completion)):
+            # cache this completion
+            cur.execute("INSERT into responses VALUES(?, ?, ?, ?)", (command, current_char, current_mood, completion))
+            con.commit()
         return completion
     except openai.error.ServiceUnavailableError:
-        errors = ["Sorry, I am feeling tired", "Sorry, I had a brain fart", "Never mind, I don't know"]
+        errors = ["Sorry, I am feeling tired", "Sorry, I forget", "Never mind, I don't know"]
         return random.choice(errors)
 
 async def move_servo(pos):
@@ -119,6 +155,21 @@ async def see_something():
                 # nothing significant seen, so stop trying
                 await say("nothing")
 
+async def mood_motion(base, mood):
+    if mood == "sad":
+        await base.move_straight(distance=-100, velocity=150)
+    elif mood == "happy":
+        await base.spin(angle=-10, velocity=1000)
+        await base.spin(angle=10, velocity=1000)
+        await base.spin(angle=-10, velocity=1000)
+        await base.spin(angle=10, velocity=1000)
+    elif mood == "angry":
+        await base.move_straight(distance=50, velocity=1000)
+        time.sleep(.05)
+        await base.move_straight(distance=-20, velocity=1000)
+        time.sleep(.05)
+        await base.move_straight(distance=50, velocity=1000)
+
 async def main():
     global robot
     robot = await connect()
@@ -127,6 +178,7 @@ async def main():
     r.energy_threshold = 1568 
     r.dynamic_energy_threshold = True
     m = sr.Microphone()
+    await move_servo("happy")
 
     while True:
         with m as source:
@@ -150,7 +202,7 @@ async def main():
                     elif command == "turn right":
                         await base.spin(angle=-90, velocity=500)
                     elif command == "turn a little left":
-                        await base.spin(angle=90, velocity=500)
+                        await base.spin(angle=45, velocity=500)
                     elif command == "turn left":
                         await base.spin(angle=90, velocity=500)
                     elif command == "turn around":
@@ -166,15 +218,15 @@ async def main():
                     elif re.search("^" + '|'.join(params.observe_list), command):
                         await see_something()
                     elif command == "act random":
-                        current_char = random.choice(params.char_list)
+                        current_char = random.choice(params.char_list.keys())
                         await say(await ai_command("Say hi " + current_person_name))
                     elif re.search("^" + params.intro_command, command):
                         current_person_name = re.sub(params.intro_command, "", command)
                         await say(await ai_command("Say hi " + current_person_name))
-                    elif re.search("^" + params.char_command +" (" + '|'.join(params.char_list) + ")", command):
+                    elif re.search("^" + params.char_command +" (" + '|'.join(params.char_list.keys()) + ")", command):
                         current_char = re.sub(params.char_command, "", command)
                         await say(await ai_command("Say hi"))
-                    elif re.search("^" + params.char_guess_command +" (" + '|'.join(params.char_list) + ")", command):
+                    elif re.search("^" + params.char_guess_command +" (" + '|'.join(params.char_list.keys()) + ")", command):
                         if current_char != "":
                             char_guess = re.sub(params.char_guess_command, "", command)
                             print("guess: |" + char_guess + "|actual: |" + current_char + "|")
@@ -182,10 +234,13 @@ async def main():
                                 await say(await ai_command("say 'You are correct'"))
                             else:
                                 await say(await ai_command("say 'You are wrong, try again'"))
-                    elif re.search("^you seem", command):
-                        current_mood = re.sub("you seem ", "", command)
-                        await move_servo(current_mood)
-                        await say(await ai_command("Say 'yeah, I am " + current_mood +  "'"))
+                    elif re.search("^you (seem|look)", command):
+                        current_mood = re.sub("you (seem|look) ", "", command)
+                        asyncio.gather(
+                            await mood_motion(base, current_mood),
+                            await move_servo(current_mood),
+                            await say(await ai_command("Say 'yeah, I am " + current_mood +  "'")),
+                        )
                     else:
                         await say(await ai_command(command))
 
