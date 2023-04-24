@@ -3,7 +3,7 @@ import time
 import sqlite3
 import hashlib
 from pygame import mixer
-from elevenlabs import ElevenLabs
+import elevenlabs as eleven
 import pygame._sdl2 as sdl2
 from gtts import gTTS
 import os
@@ -30,7 +30,7 @@ if res.fetchone() is None:
 openai.organization = params.openai_organization
 openai.api_key = params.openai_api_key
 if (params.elevenlabs_key):
-    eleven = ElevenLabs(params.elevenlabs_key)
+    eleven.set_api_key(params.elevenlabs_key)
 
 # if you want to specify a specific device, you can pass devicename = params.mixer_device
 # see https://pypi.org/project/SpeechRecognition/ for troubleshooting tips
@@ -57,12 +57,12 @@ async def say(text):
             if (params.elevenlabs_key and ((current_char and "voice" in params.char_list[current_char.lstrip()]) or (params.elevenlabs_default_voice != ""))):
                 if (current_char and "voice" in params.char_list[current_char.lstrip()]):
                     print(params.char_list[current_char.lstrip()])
-                    voice = eleven.voices[params.char_list[current_char.lstrip()]["voice"]]
+                    voice = params.char_list[current_char.lstrip()]["voice"]
                 else:
-                    voice = eleven.voices[params.elevenlabs_default_voice]
-                audio = voice.generate(text)
+                    voice = params.elevenlabs_default_voice
+                audio = eleven.generate(text=text, voice=current_char)
                 time.sleep(1)
-                audio.save(file)
+                eleven.save(audio=audio, filename=file + ".mp3")
                 time.sleep(1)
             else:
                 myobj = gTTS(text=text, lang='en', slow=False)
