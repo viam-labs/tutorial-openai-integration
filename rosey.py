@@ -136,13 +136,13 @@ async def move_servo(pos):
         await service.move(angle=pos_angle[pos])
 
 async def see_something():
-    service = VisionServiceClient.from_robot(robot, 'vision')
+    service = VisionServiceClient.from_robot(robot, 'vis-stuff-detector')
     found = False
     count = 0
     while not found:
         # if you are using a detection model instead of classifier...
-        #detections = await service.get_detections_from_camera(camera_name='cam', detector_name='stuff_detector')
-        detections = await service.get_classifications_from_camera(camera_name='cam', classifier_name='stuff_classifier', count=1)
+        #detections = await service.get_detections_from_camera(camera_name='cam')
+        detections = await service.get_classifications_from_camera(camera_name='cam', count=1)
         for d in detections:
             if d.confidence > params.vision_confidence:
                 print(detections)
