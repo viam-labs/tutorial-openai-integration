@@ -17,7 +17,7 @@ import params
 from viam.components.servo import Servo
 from viam.components.base import Base
 from viam.robot.client import RobotClient
-from viam.services.vision import VisionServiceClient
+from viam.services.vision import VisionClient
 from viam.rpc.dial import Credentials, DialOptions
 
 # set up db cache
