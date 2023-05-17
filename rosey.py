@@ -181,6 +181,7 @@ async def main():
     m = sr.Microphone()
     await move_servo("happy")
 
+    print("Setup complete, listening...")
     while True:
         with m as source:
             r.adjust_for_ambient_noise(source) 
@@ -248,7 +249,7 @@ async def main():
         except sr.UnknownValueError:
             print("Speech recognition could not understand audio")
         except Exception as e:
-            print(e)
+            print(f"Exception while running loop - {e}")
         finally:
             await robot.close()
 
