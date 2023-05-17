@@ -136,7 +136,7 @@ async def move_servo(pos):
         await service.move(angle=pos_angle[pos])
 
 async def see_something():
-    service = VisionServiceClient.from_robot(robot, 'vis-stuff-detector')
+    service = VisionClient.from_robot(robot, 'vis-stuff-detector')
     found = False
     count = 0
     while not found:
@@ -173,6 +173,7 @@ async def mood_motion(base, mood):
 async def main():
     global robot
     robot = await connect()
+    print("Connected to robot...")
     base = Base.from_robot(robot, 'viam_base')
     r = sr.Recognizer()
     r.energy_threshold = 1568 
@@ -180,6 +181,7 @@ async def main():
     m = sr.Microphone()
     await move_servo("happy")
 
+    print("Setup complete, listening...")
     while True:
         with m as source:
             r.adjust_for_ambient_noise(source) 
@@ -247,7 +249,9 @@ async def main():
         except sr.UnknownValueError:
             print("Speech recognition could not understand audio")
         except Exception as e:
-            print(e)
+            print(f"Exception while running loop - {e}")
+        finally:
+            await robot.close()
 
 if __name__ == '__main__':
     try:
