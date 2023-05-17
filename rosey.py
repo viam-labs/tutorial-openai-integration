@@ -249,6 +249,8 @@ async def main():
             print("Speech recognition could not understand audio")
         except Exception as e:
             print(e)
+        finally:
+            await robot.close()
 
 if __name__ == '__main__':
     try:
