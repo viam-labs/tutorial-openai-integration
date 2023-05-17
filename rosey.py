@@ -136,7 +136,7 @@ async def move_servo(pos):
         await service.move(angle=pos_angle[pos])
 
 async def see_something():
-    service = VisionServiceClient.from_robot(robot, 'vis-stuff-detector')
+    service = VisionClient.from_robot(robot, 'vis-stuff-detector')
     found = False
     count = 0
     while not found:
@@ -173,6 +173,7 @@ async def mood_motion(base, mood):
 async def main():
     global robot
     robot = await connect()
+    print("Connected to robot...")
     base = Base.from_robot(robot, 'viam_base')
     r = sr.Recognizer()
     r.energy_threshold = 1568 
