@@ -170,10 +170,7 @@ async def mood_motion(base, mood):
         time.sleep(.05)
         await base.move_straight(distance=50, velocity=1000)
 
-async def main():
-    global robot
-    robot = await connect()
-    print("Connected to robot...")
+async def loop(robot):
     base = Base.from_robot(robot, 'viam_base')
     r = sr.Recognizer()
     r.energy_threshold = 1568 
@@ -247,14 +244,20 @@ async def main():
                         await say(await ai_command(command))
 
         except sr.UnknownValueError:
-            print("Speech recognition could not understand audio")
+            print("Speech recognition could not understand audio, trying again")
         except Exception as e:
-            print(f"Exception while running loop - {e}")
-        finally:
-            await robot.close()
+            print("Exception while running loop")
+            raise e
+
+async def main():
+    global robot
+    robot = await connect()
+    print("Connected to robot...")
+    try:
+        loop(robot=robot)
+    except Exception:
+        await robot.close()
+        raise
 
 if __name__ == '__main__':
-    try:
-        asyncio.run(main())
-    except:
-        exit
+    asyncio.run(main())
