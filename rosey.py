@@ -246,7 +246,7 @@ async def loop(robot):
         except sr.UnknownValueError:
             print("Speech recognition could not understand audio, trying again")
         except Exception as e:
-            print(f"Exception while running loop - {e}")
+            print("Exception while running loop")
             raise e
 
 async def main():
