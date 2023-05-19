@@ -254,10 +254,14 @@ async def main():
     robot = await connect()
     print("Connected to robot...")
     try:
-        loop(robot=robot)
-    except Exception:
-        await robot.close()
-        raise
+        await loop(robot=robot) 
+    finally:
+        print("Stopping...")
+        try:
+            await robot.close()
+        except asyncio.CancelledError:
+            # can be safely ignored
+            pass
 
 if __name__ == '__main__':
     asyncio.run(main())
