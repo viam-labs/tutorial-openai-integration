@@ -41,12 +41,9 @@ current_mood = ""
 current_person_name = ""
 
 async def connect():
-    creds = Credentials(
-        type='robot-location-secret',
-        payload=params.viam_secret)
-    opts = RobotClient.Options(
-        refresh_interval=0,
-        dial_options=DialOptions(credentials=creds)
+    opts = RobotClient.Options.with_api_key(
+      api_key=params.viam_api_key,
+      api_key_id=params.viam_api_key_id
     )
     return await RobotClient.at_address(params.viam_address, opts)
 
