@@ -1,6 +1,7 @@
 import os
 
-viam_secret = os.getenv('VIAM_SECRET')
+viam_api_key = os.getenv('VIAM_API_KEY')
+viam_api_key_id = os.getenv('VIAM_API_KEY_ID')
 viam_address = os.getenv('VIAM_ADDRESS')
 openai_organization = os.getenv('OPENAPI_ORG')
 openai_api_key = os.getenv('OPENAPI_KEY')
